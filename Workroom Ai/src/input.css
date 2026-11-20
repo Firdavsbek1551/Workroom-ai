@@ -1,0 +1,32 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+html,body{background:#060816;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100%}
+.glass{background:rgba(255,255,255,.045);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border:1px solid rgba(255,255,255,.09);box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.glass-strong{background:rgba(15,18,40,.82);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.bg-blobs{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.45;animation:float 22s ease-in-out infinite}
+.b1{width:520px;height:520px;background:#7c3aed;top:-140px;left:-120px}
+.b2{width:460px;height:460px;background:#06b6d4;bottom:-160px;right:-100px;animation-delay:-7s}
+.b3{width:380px;height:380px;background:#db2777;top:40%;left:45%;opacity:.22;animation-delay:-13s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.08)}}
+.laser{position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,#67e8f9,transparent);box-shadow:0 0 18px #22d3ee;animation:laser 1.4s ease-in-out infinite}
+@keyframes laser{0%{top:12%}50%{top:86%}100%{top:12%}}
+.pulse-dot{animation:pd 1s ease-in-out infinite}
+@keyframes pd{0%,100%{opacity:.3}50%{opacity:1}}
+.eq{height:30%;animation:eq .6s ease-in-out infinite alternate}
+@keyframes eq{to{height:100%}}
+.typing{animation:ty 1s infinite}
+@keyframes ty{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+.caret{animation:pd .8s infinite;color:#a78bfa}
+.fade-in{animation:fi .35s ease both}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.slide-up{animation:su .35s ease both}
+@keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+input[type=date],input[type=time]{color-scheme:dark}
+select{color-scheme:dark}
+.sheet-in{animation:shin .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes shin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media (min-width:768px){.sheet-in{animation-name:shinr}@keyframes shinr{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}}
+.no-scrollbar{scrollbar-width:none}.no-scrollbar::-webkit-scrollbar{display:none}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
