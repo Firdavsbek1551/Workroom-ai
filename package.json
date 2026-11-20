@@ -1,0 +1,30 @@
+{
+  "name": "workroom-ai",
+  "version": "1.0.0",
+  "description": "WORKROOM AI — Biznesingiz uchun avtonom raqamli ofis (MVP)",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node server.mjs",
+    "preview": "node scripts/build.mjs && node server.mjs --preview",
+    "lint": "eslint src functions server.mjs"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@vladmandic/face-api": "^1.7.15",
+    "esbuild": "^0.28.2",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.19"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.14.0"
+  }
+}

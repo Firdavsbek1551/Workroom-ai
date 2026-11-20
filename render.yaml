@@ -1,0 +1,26 @@
+# Render Blueprint — WORKROOM AI
+# Render → New → Blueprint → shu repo'ni tanlang.
+# GEMINI_API_KEY (ixtiyoriy) — Google Gemini AI (https://aistudio.google.com/apikey)
+# TELEGRAM_BOT_TOKEN (ixtiyoriy) — davomat xabarlari boti (@BotFather)
+services:
+  - type: web
+    name: workroom-ai
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: AI_DAILY_LIMIT
+        value: "500"
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
