@@ -1,6 +1,6 @@
 {
   "name": "workroom-ai",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "WORKROOM AI — Biznesingiz uchun avtonom raqamli ofis (Face ID davomat, video-majlis, o'zbekcha Meeting AI)",
   "main": "server.js",
   "scripts": {

@@ -18,8 +18,9 @@
 <nav class="nav">
   <a href="#" class="logo"><i>W</i> WORKROOM AI</a>
   <div class="links"><a href="#muammo">Muammo</a><a href="#modullar">Modullar</a><a href="#kimlar">Kimlar uchun</a><a href="#narx">Narxlar</a><a href="#majlis">Majlis AI</a><a href="#assistant">Assistant</a></div>
-  <div class="row"><span data-theme-btn=""></span><button class="btn ghost sm" onclick="openJoin()">Roomga kirish</button><button class="btn sm" onclick="openCreate()">Room ochish</button></div>
+  <div class="row nav-actions"><span data-theme-btn=""></span><button class="btn ghost sm" onclick="openJoin()"><span class="t-long">Roomga </span>kirish</button><button class="btn sm" onclick="openCreate()"><span class="t-long">Room </span>ochish</button></div>
 </nav>
+<div class="resume hidden" id="resume"><div class="resume-in"><span class="dot"></span><div class="grow"><b id="resume-name">Room’ingiz</b><div class="small muted" id="resume-sub"></div></div><a class="btn sm" id="resume-go" href="#">Room’ga qaytish <span data-ic="arrow"></span></a></div></div>
 
 <header class="hero">
   <div>
@@ -326,8 +327,19 @@ async function join() {
     setTimeout(() => (location.href = '/room/' + code), 900);
   } catch (e) { if (e.message !== 'bekor') toast(e.message); }
 }
-if (location.hash === '#join') openJoin();
-if (location.hash === '#create') openCreate();
+const route = () => { if (location.hash === '#join') openJoin(); if (location.hash === '#create') openCreate(); };
+route(); addEventListener('hashchange', route);
+// Saqlangan hisob: "Room'ga qaytish" (PWA sifatida ochilganda — to'g'ridan-to'g'ri Room'ga)
+(async () => {
+  const code = WR.store.get('wr:last'); const s = code && session(code);
+  if (!code || !s || !(s.adminKey || s.empKey)) return;
+  const href = '/room/' + code;
+  if (new URLSearchParams(location.search).get('app') === '1') return location.replace(href);
+  $('#resume-go').href = href; $('#resume-sub').textContent = '#' + code + (s.name ? ' · ' + s.name : '');
+  $('#resume').classList.remove('hidden');
+  try { const j = await api('/api/rooms/' + code, {}, code); $('#resume-name').textContent = j.room.company; }
+  catch (e) { if (/topilmadi/i.test(e.message)) $('#resume').classList.add('hidden'); }
+})();
 </script>
 </body>
 </html>

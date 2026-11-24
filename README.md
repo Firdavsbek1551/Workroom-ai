@@ -94,3 +94,9 @@ Server `DATABASE_URL` bo‘lsa PostgreSQL’da saqlaydi (`store.js`), bo‘lmasa
 - Face ID’da “tirik yuz” tekshiruvi yo‘q — telefondagi rasmni ko‘rsatib aldash mumkin. Kioskni rahbar ko‘radigan joyga qo‘ying; keyin ko‘z qisish/bosh burish tekshiruvini qo‘shamiz.
 - Video mesh ~6 kishigacha yaxshi; ko‘proq bo‘lsa LiveKit/Jitsi server kerak.
 - Jonli subtitr Safari/Firefox’da yo‘q — lekin yozuv baribir Gemini’ga boradi.
+
+## v10 yangiliklari
+- **Telefon:** yuqori menyuda "Roomga kirish" va "Room ochish" doim ko‘rinadi; pastki menyuda "Ko‘proq" tugmasi barcha bo‘limlarni (Vazifalar, KPI, Bilim bazasi, Sozlamalar, chiqish) ochadi; xodimlar jadvali kartochka ko‘rinishida.
+- **Orqaga tugmasi:** Room ichidagi bo‘limlar orasida yuradi, oynalarni yopadi, roomdan chiqarib yubormaydi. Hisob saqlanadi: bosh sahifada "Room’ga qaytish" paneli chiqadi. Faqat "Room’dan chiqish" bosilganda hisob o‘chadi.
+- **PWA:** bosh ekranga qo‘shilgan ilova to‘g‘ridan-to‘g‘ri saqlangan Roomga ochiladi.
+- **Effektlar:** sahifa almashish animatsiyasi, kartochkalarning ketma-ket chiqishi, raqamlar sanab chiqishi, tugma to‘lqini, Assistant kartasida aylanuvchi nur, Face ID muvaffaqiyatida porlash. "Harakatni kamaytirish" sozlamasi hurmat qilinadi.

@@ -73,7 +73,7 @@ const WR = (() => {
     shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4',
     building: 'M4 21V3h11v18M15 9h5v12M8 7h3M8 11h3M8 15h3M3 21h18',
     chart: 'M3 3v18h18M7 15l4-4 3 3 5-6', x: 'M18 6 6 18M6 6l12 12', logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
-    play: 'M6 4l14 8-14 8z', pause: 'M7 5h3v14H7zM14 5h3v14h-3z', stop: 'M6 6h12v12H6z', phone: 'M7 2h10v20H7zM11 18h2', telegram: 'M21 4 2 11l6 2 2 6 3-4 5 4zM8 13l10-7',
+    play: 'M6 4l14 8-14 8z', more: 'M4 6h16M4 12h16M4 18h16', pause: 'M7 5h3v14H7zM14 5h3v14h-3z', stop: 'M6 6h12v12H6z', phone: 'M7 2h10v20H7zM11 18h2', telegram: 'M21 4 2 11l6 2 2 6 3-4 5 4zM8 13l10-7',
     sick: 'M12 2a3 3 0 0 0-3 3v9.5a4 4 0 1 0 6 0V5a3 3 0 0 0-3-3zM12 15v-3', arrow: 'M5 12h14M13 6l6 6-6 6', zap: 'M13 2 3 14h9l-1 8 10-12h-9z',
     calendar: 'M3 5h18v16H3zM16 3v4M8 3v4M3 10h18', key: 'M21 2l-2 2m-7.6 7.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8zM15.5 7.5l3 3L22 7l-3-3',
   };

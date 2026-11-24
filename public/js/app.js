@@ -10,6 +10,7 @@ const socket = io();
   if (m) setSession(CODE, { adminKey: m[1] });
   if (e) setSession(CODE, { empKey: e[1], adminKey: undefined });
   if (m || e) history.replaceState(null, '', location.pathname);
+  WR.store.set('wr:last', CODE);
 })();
 const joinRoom = () => { const s = session(CODE); socket.emit('room:join', { code: CODE, key: s.adminKey || s.empKey }); };
 
@@ -20,6 +21,7 @@ const MENU_ADMIN = [
 const MENU_EMP = [['home', 'home', 'Bosh sahifa'], ['kiosk', 'scan', 'Face ID'], ['mentor', 'brain', 'AI Mentor'], ['meetings', 'video', 'Majlislar'], ['tasks', 'check', 'Vazifalarim']];
 
 async function boot() {
+  $('#view').innerHTML = '<div class="grid g4 stats"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><div class="skel" style="height:260px;margin-top:16px"></div>';
   try {
     const j = await api('/api/rooms/' + CODE, {}, CODE);
     S.room = j.room; S.admin = j.admin; S.linkCommand = j.linkCommand; S.myLink = j.myLink;
@@ -37,14 +39,45 @@ async function boot() {
   $('#me-name').textContent = (S.me ? S.me.name : 'Admin') + (S.admin ? ' · admin' : '');
   const menu = S.admin ? MENU_ADMIN : MENU_EMP;
   $('#menu').innerHTML = menu.map(([v, i, t]) => `<button data-v="${v}">${ic(i)} ${t}</button>`).join('');
-  const bn = S.admin ? menu.filter((m) => ['home', 'assistant', 'kiosk', 'meetings', 'mentor', 'people'].includes(m[0])) : menu;
-  $('#bnav').innerHTML = bn.map(([v, i, t]) => `<button data-v="${v}">${ic(i, 'lg')}${t.startsWith('AI ') ? t.slice(3) : t.split(' ')[0]}</button>`).join('');
-  $$('[data-v]').forEach((b) => (b.onclick = () => go(b.dataset.v)));
+  $('#menu').insertAdjacentHTML('beforeend', `<button class="logout" onclick="logout()">${ic('logout')} Chiqish</button>`);
+  const bn = menu.filter((m) => (S.admin ? ['home', 'assistant', 'kiosk', 'meetings'] : ['home', 'kiosk', 'mentor', 'tasks']).includes(m[0]));
+  const short = (t) => (t.startsWith('AI ') ? t.slice(3) : t.split(' ')[0]);
+  $('#bnav').innerHTML = bn.map(([v, i, t]) => `<button data-v="${v}">${ic(i, 'lg')}<span>${short(t)}</span></button>`).join('') + `<button id="more-btn" aria-label="Barcha bo‘limlar">${ic('more', 'lg')}<span>Ko‘proq</span></button>`;
+  $('#sheet-body').innerHTML = `<div class="sheet-room"><div class="grow"><b>${esc(S.room.company)}</b><div class="small muted">#${CODE} · ${esc(S.me ? S.me.name : 'Rahbar')}${S.admin ? ' · admin' : ''}</div></div>${WR.themeBtn()}</div>
+    <div class="sheet-grid">${menu.map(([v, i, t]) => `<button data-v="${v}">${ic(i, 'lg')}<span>${t}</span></button>`).join('')}</div>
+    <button class="btn ghost" style="width:100%;margin-top:12px" onclick="logout()">${ic('logout')} Room’dan chiqish</button>`;
+  $('#more-btn').onclick = openSheet;
+  $('#sheet').onclick = (e) => { if (e.target.id === 'sheet') closeSheet(); };
+  $$('[data-v]').forEach((b) => (b.onclick = () => {
+    const fromSheet = !$('#sheet').classList.contains('hidden') && history.state && history.state.sheet;
+    if (fromSheet) { closeSheet(true); go(b.dataset.v, undefined, 'replace'); } else { closeSheet(); go(b.dataset.v); }
+  }));
   await loadTasks();
   Offline.sync(true);
   const m = location.hash.match(/meet=([a-f0-9]+)/);
-  go(m ? 'live' : 'home', m ? m[1] : undefined);
+  const hv = (location.hash.match(/^#([a-z]+)(?:=([\w-]+))?$/) || [])[1];
+  const allowed = menu.map((x) => x[0]).concat(['meeting']);
+  if (m) go('live', m[1], 'replace');
+  else if (hv && allowed.includes(hv)) go(hv, (location.hash.split('=')[1] || undefined), 'replace');
+  else go('home', undefined, 'replace');
 }
+function openSheet() { $('#sheet').classList.remove('hidden'); requestAnimationFrame(() => $('#sheet').classList.add('open')); history.pushState({ ...(history.state || {}), sheet: 1 }, ''); }
+function closeSheet(fromPop) { const sh = $('#sheet'); if (!sh || sh.classList.contains('hidden')) return; sh.classList.remove('open'); setTimeout(() => sh.classList.add('hidden'), 220); if (fromPop !== true && history.state && history.state.sheet) { const st = { ...history.state }; delete st.sheet; history.replaceState(st, ''); } }
+function logout() {
+  if (!confirm('Room’dan chiqasizmi? Qayta kirish uchun kod va parol (yoki shaxsiy havola) kerak bo‘ladi.')) return;
+  WR.store.del('wr:' + CODE); if (WR.store.get('wr:last') === CODE) WR.store.del('wr:last');
+  try { localStorage.removeItem('wr:chat:' + CODE + ':' + (S.me ? S.me.id : 'admin')); } catch (_) {}
+  location.replace('/');
+}
+// Brauzer "orqaga" tugmasi Room ichida bo'limlar bo'ylab yuradi (Room'dan chiqib ketmaydi)
+addEventListener('popstate', (e) => {
+  if (!$('#modal').classList.contains('hidden')) { closeModal(true); return; }
+  if (!$('#sheet').classList.contains('hidden')) { closeSheet(true); return; }
+  const st = e.state;
+  if (st && st.v && st.v === S.view && st.arg === S.viewArg) { history.back(); return; } // modal/menyu yopilgandan qolgan qadam — o'tkazib yuboramiz
+  if (st && st.v) go(st.v, st.arg, 'none');
+  else if (S.room) go('home', undefined, 'none');
+});
 
 async function pendingScreen(j) {
   $('.side').classList.add('hidden'); $('.shell').style.gridTemplateColumns = 'minmax(0,1fr)';
@@ -66,9 +99,13 @@ async function pendingScreen(j) {
   };
 }
 
-function go(v, arg) {
+function go(v, arg, hist = 'push') {
   if (S.cleanup) { try { S.cleanup(); } catch (_) {} S.cleanup = null; }
-  S.view = v;
+  const url = v === 'live' ? '#meet=' + arg : v === 'home' ? location.pathname : '#' + v + (arg && v !== 'offline' ? '=' + arg : '');
+  if (hist === 'push' && !(history.state && history.state.v === v && history.state.arg === arg)) history.pushState({ v, arg }, '', url);
+  else if (hist === 'replace') history.replaceState({ v, arg }, '', url);
+  S.view = v; S.viewArg = arg;
+  const view = $('#view'); view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   $$('[data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === v || (v === 'live' && b.dataset.v === 'meetings')));
   window.scrollTo(0, 0);
   ({ home, assistant, kiosk, people, meetings, tasks, kpi, settings, mentor, kb, offline: (t) => Offline.open(t), live: (id) => Meeting.open(id), meeting: meetingDetail })[v](arg);
@@ -298,7 +335,7 @@ function people() {
   $('#view').innerHTML = `
     ${pend.length ? `<div class="card assist" style="margin-bottom:16px"><h3>Qo‘shilish so‘rovlari (${pend.length})</h3>${pend.map((e) => `<div class="list-item">${avatar(e)}<div class="grow"><b>${esc(e.name)}</b><div class="small muted">${e.hasFace ? 'Face ID topshirgan' : 'Face ID hali yo‘q'} · ${WR.uzDate(e.createdAt, true)}</div></div><button class="btn ok sm" onclick="approveEmp('${e.id}')">Tasdiqlash</button><button class="btn ghost sm" onclick="delEmp('${e.id}')">Rad etish</button></div>`).join('')}</div>` : ''}
     <div class="top"><h1>Xodimlar <span class="muted small">(${list.length})</span></h1><div class="row"><button class="btn sec" onclick="bulkEnroll()">${ic('scan')} Hammani skaner qilish</button><button class="btn" onclick="addEmp()">${ic('plus')} Xodim</button></div></div>
-    <div class="card table-wrap"><table><thead><tr><th></th><th>Ism</th><th>Lavozim</th><th>Maosh</th><th>Face ID</th><th></th></tr></thead><tbody>
+    <div class="card table-wrap"><table class="ptable"><thead><tr><th></th><th>Ism</th><th>Lavozim</th><th>Maosh</th><th>Face ID</th><th></th></tr></thead><tbody>
     ${list.map((e) => `<tr><td>${avatar(e)}</td><td><b>${esc(e.name)}</b>${e.isAdmin ? ' <span class="badge">admin</span>' : ''}</td><td>${esc(e.role)}</td><td>${money(e.salary)}</td>
       <td>${e.hasFace ? '<span class="badge ok">✓ ro‘yxatda</span>' : '<span class="badge warn">yo‘q</span>'}</td>
       <td class="row" style="justify-content:flex-end;flex-wrap:nowrap">${e.isAdmin ? '' : `<button class="icon-btn" title="Shaxsiy kirish havolasi (xodimga yuboring)" onclick="inviteLink('${e.id}')">${ic('link')}</button>`}<button class="btn sm sec" onclick="enrollModal('${e.id}')">${ic('scan')} ${e.hasFace ? 'Qayta' : 'Skaner'}</button><button class="btn sm ghost" onclick="editEmp('${e.id}')">${ic('edit')}</button>${e.isAdmin ? '' : `<button class="btn sm ghost" onclick="delEmp('${e.id}')">${ic('trash')}</button>`}</td></tr>`).join('')}
@@ -306,8 +343,16 @@ function people() {
     <div class="card" style="margin-top:16px"><h3>Xodimni telefon orqali taklif qilish</h3><p class="small muted">1-usul (eng xavfsiz): jadvaldagi havola tugmasi — xodimning shaxsiy havolasi, uni faqat o‘ziga yuboring. 2-usul: xodim ${esc(location.host)} → “Roomga kirish” → kod <b style="color:var(--mint)">#${CODE}</b> → siz uni shu yerda tasdiqlaysiz.</p>
     <button class="btn sm sec" style="margin-top:10px" onclick="navigator.clipboard.writeText('${location.origin}/#join').then(()=>toast('Nusxalandi'))">${ic('link')} Taklif havolasi</button></div>`;
 }
-function modal(html) { $('#modal-body').innerHTML = html; $('#modal').classList.remove('hidden'); }
-function closeModal() { $('#modal').classList.add('hidden'); if (S.mAbort) S.mAbort.abort(); Face.stopCam(S.mStream); }
+function modal(html) {
+  const wasOpen = !$('#modal').classList.contains('hidden');
+  $('#modal-body').innerHTML = html; $('#modal').classList.remove('hidden');
+  if (!wasOpen) history.pushState({ ...(history.state || {}), modal: 1 }, '');
+}
+function closeModal(fromPop) {
+  if ($('#modal').classList.contains('hidden')) return;
+  $('#modal').classList.add('hidden'); if (S.mAbort) S.mAbort.abort(); Face.stopCam(S.mStream); S.mStream = null;
+  if (fromPop !== true && history.state && history.state.modal) { const st = { ...history.state }; delete st.modal; history.replaceState(st, ''); }
+}
 function addEmp() {
   modal(`<h2>Yangi xodim</h2><label>Ism Familiya</label><input id="e-name"><label>Lavozim</label><input id="e-role" placeholder="Xodim"><label>Oylik maosh (so‘m)</label><input id="e-sal" type="number">
   <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn sec" onclick="closeModal()">Bekor</button><button class="btn" onclick="saveEmp(true)">Saqlash va yuzini skaner qilish</button></div>`);
@@ -586,4 +631,18 @@ socket.on('meeting:started', (m) => { if (S.view !== 'live' && !S.admin) toast(`
 socket.on('connect', () => { if (S.room) joinRoom(); });
 socket.on('approved', () => { toast('Rahbar sizni tasdiqladi!'); setTimeout(() => location.reload(), 800); });
 
+// Effektlar: tugma to'lqini va statistik raqamlarning sanab chiqishi
+document.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest && e.target.closest('.btn,.ctl,.seg button,.bottom-nav button,.sheet-grid button'); if (!b || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height), s = document.createElement('span');
+  s.className = 'ripple'; s.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  b.appendChild(s); setTimeout(() => s.remove(), 650);
+}, { passive: true });
+new MutationObserver(() => {
+  $$('.stat .n:not([data-c])').forEach((el) => {
+    el.dataset.c = 1; const node = [...el.childNodes].find((n) => n.nodeType === 3 && /^\s*\d+\s*$/.test(n.textContent)); if (!node) return;
+    const to = parseInt(node.textContent, 10); if (!to || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t0 = performance.now(); const step = (t) => { const k = Math.min(1, (t - t0) / 700); node.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step);
+  });
+}).observe(document.getElementById('view'), { childList: true, subtree: true });
 boot();
