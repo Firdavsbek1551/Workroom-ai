@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "node --check server.js && node --check store.js && echo Build OK",
     "check": "node --check server.js && for f in public/js/*.js; do node --check $f; done"
   },
   "engines": {
