@@ -1,26 +1,28 @@
-# Render Blueprint — WORKROOM AI
-# Render → New → Blueprint → shu repo'ni tanlang.
-# GEMINI_API_KEY (ixtiyoriy) — Google Gemini AI (https://aistudio.google.com/apikey)
-# TELEGRAM_BOT_TOKEN (ixtiyoriy) — davomat xabarlari boti (@BotFather)
+# Render Blueprint (bepul): Dashboard → New → Blueprint → shu repo
+# Ma'lumotlar Neon PostgreSQL'da saqlanadi (bepul, muddatsiz) — server qayta ishga tushsa ham o'chmaydi.
 services:
   - type: web
     name: workroom-ai
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --omit=dev || npm install --omit=dev
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
-      - key: NODE_VERSION
-        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL        # Neon → Connect → connection string (postgresql://...)
+        sync: false
+      - key: SUPER_ADMIN_KEY
+        generateValue: true
       - key: GEMINI_API_KEY
         sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      - key: SESSION_SECRET
-        generateValue: true
-      - key: AI_DAILY_LIMIT
-        value: "500"
-      - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+      - key: TURN_URL
+        sync: false
+      - key: TURN_USER
+        sync: false
+      - key: TURN_PASS
+        sync: false

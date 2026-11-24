@@ -1,107 +1,96 @@
-# WORKROOM AI — Biznesingiz uchun avtonom raqamli ofis
+# WORKROOM AI — avtonom raqamli ofis
 
-React 18 + Tailwind CSS + lucide-react. Ma'lumotlar foydalanuvchi brauzerida (`localStorage`) saqlanadi va zaxira fayli orqali boshqa qurilmaga ko'chiriladi. Google Gemini AI uchun ixtiyoriy server funksiyasi bor.
+Face ID davomat (platforma ichida, har qanday kamerada), ichki video-majlis (Zoom o‘rniga), o‘zbekcha Meeting AI (tinglaydi → xulosa + vazifalar), 1-Click tasdiqlash, Smart KPI & maosh, Telegram bot.
 
-## Tuzilma (foydalanuvchi uchun)
-- **Bugun:** kim ofisda, AI tavsiyalarni bir bosishda tasdiqlash, bugungi vazifalar va oxirgi majlis.
-- **Vazifalar:** vazifani bitta qatorda yozish kifoya ("Nigora ertaga 10 ta post tayyorlasin, shoshilinch"). Mas'ul, muddat va ustuvorlik avtomatik aniqlanadi. Ro'yxat muddati bo'yicha guruhlanadi.
-- **Majlis:** video xona va jonli transkript. Majlis oxirida AI xulosa beradi va vazifalarni bir bosishda taqsimlaydi.
-- **Jamoa:** xodim kartasini bossangiz, uning hamma ma'lumoti bir joyda: holat, oylik davomat taqvimi, vazifalar, KPI va maosh, yuzni skanerlash.
-- **Maosh:** oylik hisobot. Qatorni bossangiz, xodimning batafsil ma'lumoti ochiladi.
-- **Davomat kiosk** (tepadagi tugma yoki `/#kiosk`): kirish eshigidagi planshet uchun. Xodim kameraga qarasa, kelish yoki ketish o'zi qayd etiladi. Kioskdan chiqish uchun Room kodi so'raladi.
-- **AI yordamchi:** pastki o'ng burchakdagi tugma. Rahbar ofis holatini, xodim esa qoidalar va o'z vazifalarini so'raydi.
-- **Sozlamalar:** ⚙ tugmasi. Kompaniya ma'lumotlari, ish vaqti, jarima va zaxira nusxa.
-
-## Kod tuzilmasi
-`src/core.js` — biznes mantiq (KPI, davomat, majlis tahlili, Face ID). `src/ui.jsx` — umumiy komponentlar. `src/pages/*` — sahifalar. `src/main.jsx` — ilova qobig'i. `functions/api/ai.js` — Google Gemini API proksi. `functions/api/telegram.js` — Telegram bot xabarlari. `server.mjs` — production server (Render).
-
-## Buyruqlar
-
+## Ishga tushirish (kompyuterda)
 ```bash
 npm install
-npm run build     # dist/ papkasini yaratadi
-npm run preview   # build + http://localhost:4173 (production sarlavhalari va /api/ai bilan)
-npm start         # production server (Render shuni ishga tushiradi; PORT o'zgaruvchisi)
-npm run lint      # kod tekshiruvi
+npm start          # http://localhost:3000
 ```
+Kamera/mikrofon faqat `localhost` yoki **https** da ishlaydi (Render avtomatik https beradi).
 
-## Render'ga joylash (tavsiya)
+## Render’ga joylash
+1. Papkani GitHub’ga yuklang → Render → **New Web Service** → repo.
+2. Build: `npm install` · Start: `npm start`
+3. **Environment** bo‘limiga qo‘shing:
 
-Loyiha Render **Web Service** sifatida ishlaydi. `server.mjs` saytni xavfsizlik sarlavhalari bilan beradi va Gemini AI uchun `/api/ai` yo'lini ochadi.
+| O‘zgaruvchi | Nima uchun |
+|---|---|
+| `GEMINI_API_KEY` | Meeting AI: audio + matnni tahlil qilib vazifalar chiqaradi. Bo‘lmasa — oddiy qoida bilan ishlaydi |
+| `SUPER_ADMIN_KEY` | Umumiy admin panel (`/admin`) kaliti — barcha ochilgan Room’lar, xodimlar va jonli faollikni ko‘rasiz. Uzun, tasodifiy so‘z qo‘ying |
+| `GEMINI_MODEL` | ixtiyoriy. Bo‘sh qoldiring — server kalitingizga ochiq eng yangi Gemini Flash modelini o‘zi tanlaydi |
+| `TELEGRAM_BOT_TOKEN` | @BotFather’dan. Kim keldi/kelmadi xabarlari |
+| `DATA_DIR` | Render **Disk** ulasangiz, masalan `/var/data` — ma’lumotlar o‘chib ketmaydi |
+| `TURN_URL`, `TURN_USER`, `TURN_PASS` | ixtiyoriy. Mobil internetda video ulanmasa (masalan, metered.ca bepul TURN) |
+| `FACE_THRESHOLD` | ixtiyoriy, standart `0.5` (kichikroq = qattiqroq) |
 
-1. Loyihani GitHub'ga yuklang (`node_modules` va `dist` yuklanmaydi, `.gitignore` buni hal qiladi).
-2. render.com → **New → Blueprint** → GitHub repo'ni tanlang. Render `render.yaml` faylini o'zi topadi.
-3. Render ikkita qiymat so'raydi (ikkalasi ham ixtiyoriy). `TELEGRAM_BOT_TOKEN` haqida pastda, "Telegram bot" bo'limida yozilgan. `GEMINI_API_KEY` uchun:
-   - Gemini AI kerak bo'lsa, kalitni kiriting. Kalitni https://aistudio.google.com/apikey sahifasidan bepul olish mumkin;
-   - kerak bo'lmasa, bo'sh qoldiring: Meeting AI va AI yordamchi lokal rejimda ishlaydi.
-4. **Apply** tugmasini bosing. Bir necha daqiqadan keyin sayt `https://workroom-ai.onrender.com` ko'rinishidagi manzilda ochiladi (aniq nom Render'da chiqadi).
+⚠️ Render bepul tarifida disk vaqtinchalik — qayta ishga tushganda `db.json` o‘chadi. Haqiqiy mijozlar uchun **Disk** ($) qo‘shing yoki keyin PostgreSQL’ga o‘tamiz.
 
-Blueprint'siz, qo'lda qilish ham mumkin: New → Web Service → repo.
-- Build Command: `npm ci && npm run build`
-- Start Command: `npm start`
-- Health Check Path: `/healthz`
-- Environment: `NODE_VERSION=20`, ixtiyoriy `GEMINI_API_KEY` va `TELEGRAM_BOT_TOKEN`
+## Qanday ishlaydi
+- **Room ochish** (`/`): kompaniya → xodimlar ro‘yxati → kamera ochiladi va **hamma navbat bilan yuzini skaner qiladi** → `#UZxxxx` kod.
+- **Admin panel** (`/room/UZxxxx`): Boshqaruv, Face ID kiosk, Xodimlar (skaner/qayta skaner), Majlislar, Vazifalar (kanban), KPI & Maosh (CSV), Sozlamalar.
+- **Face ID**: brauzerda `face-api.js` yuzni 128 ta raqamli “izga” aylantiradi; serverga rasm emas, shu iz yuboriladi va solishtiriladi. 1-qarash = keldi (kechikish daqiqasi bilan), 2-qarash = ketdi.
+- **Majlis**: WebRTC video (≈6 kishigacha), ekran ulashish, chat. Har bir ishtirokchining telefoni/kompyuteri uning nutqini `uz-UZ` bilan jonli subtitrga aylantiradi (Chrome/Edge), rahbar qurilmasi butun majlis ovozini yozib oladi. “Yakunlash” → Gemini ovoz + subtitrni tahlil qiladi → xulosa, qarorlar, “kim — nima — qachongacha” → rahbar **1-Click tasdiqlaydi** → vazifalar xodimlarga va Telegramga tushadi.
+- **Telegram**: Sozlamalar’dagi `/ulash UZxxxx maxfiy` buyrug‘ini botga yuboring. `/hisobot` — bugungi davomat. Ish boshlanganidan 30 daqiqa o‘tib avtomatik “kim kelmadi” hisoboti.
 
-**Render bo'yicha muhim:**
-- Bepul (Free) rejada server 15 daqiqa so'rov kelmasa uxlab qoladi. Keyingi birinchi ochilish 30–60 soniya davom etadi. Doimiy ishlashi uchun Starter rejasi kerak.
-- Sayt ma'lumotlari serverda emas, foydalanuvchi brauzerida saqlanadi. Shuning uchun server uxlab qolsa yoki qayta ishga tushsa, ma'lumot yo'qolmaydi.
-- `/api/ai` boshqa domenlardan kelgan so'rovlarni qabul qilmaydi. Bir IP'dan 10 daqiqada 40 tadan ortiq so'rov kelsa, rad etadi.
+## Yangi modullar (v3)
+- **AI Mentor** (`Room → AI Mentor`): xodim savol beradi, Gemini kompaniyaning **Bilim bazasi** (rahbar to‘ldiradi: qoidalar, yo‘riqnomalar, .txt fayl) asosida o‘zbekcha javob beradi. Rahbar xodimlar nima so‘rayotganini ko‘rib turadi.
+- **AI Assistant · 1-Click**: xodim “Bugun kela olmayman” (kasal/ta’til) bosadi yoki rahbar belgilaydi → AI ochiq vazifalarni eng mos (bir xil lavozim, eng kam yuklangan) hamkasbga o‘tkazishni taklif qiladi → rahbar “Ha, o‘tkaz” yoki boshqa xodimni tanlaydi. Telegram’ga ham boradi.
+- **Umumiy admin panel** (`/admin`): barcha Room’lar jadvali, 14 kunlik check-in grafigi, taxminiy MRR, jonli faollik lentasi, har bir Room tafsiloti, “Admin sifatida ochish” va o‘chirish.
 
-### Telegram bot (kelgan / kelmagan xabarlari)
-1. Telegram'da **@BotFather** ga `/newbot` yozing, botga nom bering va tokenni oling.
-2. Render → saytingiz → **Environment** bo'limida `TELEGRAM_BOT_TOKEN` o'zgaruvchisiga shu tokenni yozing va saqlang.
-3. Saytda ⚙ Sozlamalar → **Telegram bot** → "Guruhga qo'shish" (yoki "Shaxsiy chatga") tugmasini bosing. Telegram'da botni guruhga qo'shing yoki Start bosing. Sayt ulanganini o'zi aniqlaydi.
+## Yangi (v4)
+- **Oflayn majlis (xonada)**: Majlislar → “Oflayn majlis”. Telefon/noutbukni stolga qo‘ying — butun xona yoziladi, ekran o‘chmaydi, jonli subtitr chiqadi. Yakunlanganda Gemini spikerlarni ajratib (ism aytilsa ism bilan), xulosa va vazifalarni chiqaradi. **Internet bo‘lmasa** yozuv qurilmada (IndexedDB) saqlanadi va internet qaytishi bilan avtomatik yuboriladi.
+- **Audio fayl yuklash**: diktofon yoki Telegram ovozli yozuvi (mp3/m4a/ogg/webm, 19 MB gacha) → AI tahlil.
+- **AI Assistant avto-nazorat**: ish boshlanib *N* daqiqa (Sozlamalar) o‘tgach, xabarsiz kelmaganlarni o‘zi topadi → eng mos o‘rinbosarni tanlaydi (bir xil lavozim, bugun ishda, eng kam band) → rahbarga saytda va Telegram’da “✅ Ha / ✖️ Yo‘q” tugmali taklif yuboradi. **Avtopilot** yoqilsa — o‘zi tayinlaydi.
+- **Xodim javob beradi**: xodim botga `/men UZxxxx kod` yuborib ulanadi (kod uning bosh sahifasida). Kelmasa bot undan “Kasalman / Kechikyapman / Ta’til / Uzrli” deb so‘raydi, javob rahbarga boradi; o‘rinbosarga ham “bugun siz mas’ulsiz” xabari keladi.
+- **E’lonlar**, **AI kun xulosasi** (ish tugaganda Telegram’ga), **Oyning eng yaxshilari**, **maosh varaqasi** (chop etish/PDF), telefonga **ilova sifatida o‘rnatish** (PWA), **kun / tun rejimi** (tugma: quyosh/oy).
 
-Bot nimalarni yuboradi:
-- Kiosk xodimni tanishi bilan: ✅ keldi (o'z vaqtida), ⏰ keldi (+N daqiqa kechikish), 👋 ketdi.
-- Ish kunlari, ish boshlangandan 30 daqiqa keyin (vaqtini sozlash mumkin): 📋 hisobot — kim keldi, kim kechikdi, kim kasal, ❌ kim kelmadi.
-- "Sinov xabari" va "Hisobotni hozir yuborish" tugmalari ham bor.
+## Ma’lumotlar bazasi (Neon PostgreSQL) — v9
+Server `DATABASE_URL` bo‘lsa PostgreSQL’da saqlaydi (`store.js`), bo‘lmasa `data/db.json` faylida.
+1. **neon.com** → ro‘yxatdan o‘ting (karta shart emas) → **New project** (region: Frankfurt yoki eng yaqini).
+2. **Connect** → connection string’ni nusxalang: `postgresql://user:parol@ep-....neon.tech/neondb?sslmode=require`
+3. Render → servis → **Environment** → `DATABASE_URL` = shu satr → **Save**.
+4. Sayt → Sozlamalar → **Tizim holati** → “Ma’lumotlar bazasi: PostgreSQL ulangan”.
+- Jadval avtomatik yaratiladi (`wr_store`), har bir Room alohida qator; faqat o‘zgarganlar yoziladi.
+- Baza vaqtincha uzilsa — sayt ishlayveradi, o‘zgarishlar baza qaytgach yoziladi.
+- Ishga tushishda bazaga ulanib bo‘lmasa server **ishga tushmaydi** (bo‘sh holat bilan haqiqiy ma’lumotni ustidan yozmaslik uchun) — Render qayta urinadi.
+- Avvalgi `db.json` bo‘lsa, bo‘sh bazaga bir marta avtomatik ko‘chiriladi.
 
-Xabarlar davomat qayd etilgan qurilmadan (kiosk planshetidan) yuboriladi. Ertalabki hisobot ketishi uchun kiosk ochiq turishi kerak. Server baza saqlamaydi: chat manzili imzolangan token ko'rinishida faqat saytda turadi, shuning uchun bot orqali begona chatlarga xabar yuborib bo'lmaydi.
+## Xavfsizlik (v5)
+- Room kodi 6 xonali (`UZ123456`), kirish urinishlari cheklangan (rate limit) — kodni taxmin qilish amalda imkonsiz.
+- Kod bilan kirgan yangi odam **rahbar tasdiqlaguncha** hech narsa ko‘rmaydi (xodimlar, vazifalar, majlislar yopiq). Eng xavfsiz yo‘l — Xodimlar jadvalidagi 🔗 **shaxsiy havola**.
+- Mavjud xodim ismi bilan kirib, uning hisobini egallab bo‘lmaydi.
+- Barcha ma’lumot API’lari va real-vaqt (Socket.io) kanallari kalit bilan himoyalangan; kalitlar vaqtga bardoshli (timing-safe) solishtiriladi.
+- Face ID kiosk faqat admin qurilmasida; xodim telefonida faqat **o‘zini** belgilay oladi.
+- CSP, HSTS, X-Frame-Options, nosniff, Permissions-Policy sarlavhalari; HTTP → HTTPS yo‘naltirish.
+- Rasm faqat JPEG/PNG/WebP base64 (SVG orqali XSS yo‘q), barcha matnlar uzunligi va formati tekshiriladi.
+- Gemini kaliti URL’da emas, sarlavhada yuboriladi; xatolar foydalanuvchiga ichki tafsilotsiz qaytadi.
+- Render to‘xtatganda ma’lumotlar darhol saqlanadi; har kuni zaxira nusxa (7 kun), buzilgan bazada avtomatik tiklash.
+- `npm audit`: 0 zaiflik.
 
-### Boshqa xostinglar
-- **Cloudflare Pages:** `functions/api/ai.js` u yerda avtomatik ishlaydi. Build `npm run build`, chiqish papkasi `dist`.
-- **Netlify / Vercel:** `netlify.toml` va `vercel.json` tayyor, lekin AI faqat lokal rejimda ishlaydi.
+## Joylash (Render, 5 daqiqa)
+1. Papkani GitHub’ga yuklang.
+2. Render → **New → Blueprint** → repo’ni tanlang (`render.yaml` hamma narsani sozlaydi: disk, healthcheck, `SUPER_ADMIN_KEY`).
+3. Environment’da `GEMINI_API_KEY` va `TELEGRAM_BOT_TOKEN`ni kiriting → **Deploy**.
+4. `SUPER_ADMIN_KEY` qiymatini Environment’dan oling — `/admin` sahifasining kaliti.
+> Bepul tarifda disk yo‘q: qayta ishga tushganda ma’lumot o‘chadi. Haqiqiy mijozlar uchun **Starter** tarif + disk shart.
 
-Sayt HTTPS orqali ochilishi shart, aks holda brauzer kamera va mikrofonga ruxsat bermaydi. Render HTTPS'ni avtomatik beradi.
+## v6 tuzatishlar
+- **Rahbar kirishi**: Room ochishda parol qo‘yiladi. Boshqa qurilmadan: bosh sahifa → Roomga kirish → **Rahbarman** → kod + parol. Umumiy platforma admini: `/admin` + `SUPER_ADMIN_KEY`.
+- **Kelish/ketish**: “Avto” rejimda kelgandan keyin 3 soat ichida qayta qarash “ketdi” bo‘lmaydi; kioskda **Keldim / Ketdim** tugmalari. Noto‘g‘ri yozuvni admin o‘chira oladi.
+- **Face ID**: aniqroq SSD detektor, “yuz” emas narsalar (kiyim, fon) rad etiladi, **tirik yuz** tekshiruvi (boshni yon tomonga burish), ikki xodimga o‘xshagan yuz qabul qilinmaydi, bir yuz ikki xodimga yozilmaydi. Noto‘g‘ri yozilgan Face ID’ni Xodimlar → ✎ → “Face ID’ni o‘chirish”.
+- **Gemini**: model avtomatik tanlanadi (eski model o‘chirilsa ham ishlaydi), xato sababi ko‘rinadi.
+- **Telegram**: Render’da **webhook** rejimi — bepul tarifda server uxlab qolsa ham bot xabari uni uyg‘otadi.
+- **Sozlamalar → Tizim holati**: Gemini va bot ishlayaptimi, xato bo‘lsa — sababi.
 
-## Imkoniyatlar
-- **Face ID:** `face-api` neyron modeli (TinyFaceDetector + 68 nuqta + FaceRecognitionNet, 128 o'lchamli yuz shabloni). Modellar saytning o'zida (`/models`, ~6.7 MB) va birinchi marta kamera yoqilganda yuklanadi. Yuz topilmasa, tizim ogohlantiradi. Tanish chegarasi: evklid masofasi < 0.5.
-- **Meeting AI:** Chrome'da o'zbekcha nutqni tanish (`uz-UZ`). Tahlilni Gemini bajaradi (agar kalit berilgan bo'lsa), aks holda lokal qoidalar.
-- **Adolatli KPI:** davomat 35%, intizom 20%, vazifalar 45%. Muddati hali kelmagan vazifalar KPI'ni pasaytirmaydi.
-- **Zaxira:** Sozlamalar → "Zaxira faylini yuklab olish". Tiklash Sozlamalarda yoki kirish sahifasida.
+## Face ID maslahatlari
+- Ro‘yxatdan o‘tkazishda yuz yorug‘ joyda, kameraga ~50 sm masofada bo‘lsin; kadrda faqat bitta odam.
+- Kiosk: xodim kameraga qaraydi → “boshingizni sekin chapga yoki o‘ngga burang” → yana qaraydi → ~10 soniyada belgilanadi.
+- Tirik yuz tekshiruvi rasm/telefon ekranini o‘tkazmaydi. Juda sekin qurilmada noqulay bo‘lsa: Sozlamalar → Xavfsizlik → o‘chirish.
+- Noto‘g‘ri yozilgan yuz: Xodimlar → ✎ → “Face ID’ni o‘chirish” → qayta skaner.
+- Sinov (v8): 22 ta haqiqiy yuzda chegaralar o‘lchangan; brauzerda yuz videolari bilan ro‘yxatga olish, tanish, begona odamni rad etish va rasm bilan aldashni bloklash tekshirilgan.
 
-## Xavfsizlik
-**Saytda (brauzerda):**
-- **Rahbar PIN-kodi** (Sozlamalar → Xavfsizlik). PIN o'rnatilsa:
-  - sayt qulflanadi, va qulflangan holatda faqat Davomat kiosk ochiladi;
-  - harakatsizlikdan keyin (5–60 daqiqa) avtomatik qulflanadi;
-  - kioskdan chiqish ham PIN bilan;
-  - PIN qurilmada ochiq saqlanmaydi, faqat xeshi turadi (PBKDF2-SHA256, 150 000 iteratsiya);
-  - 5 marta xato kiritilsa, kutish vaqti har safar oshib boradi (15 daqiqagacha);
-  - 1111, 1234 kabi oddiy PIN qabul qilinmaydi.
-- **Tiriklik tekshiruvi (kiosk):** tanilgandan keyin xodim boshini chapga va o'ngga buradi, keyin shaxs qayta tasdiqlanadi. Bu telefon yoki qog'ozdagi surat bilan aldashni qiyinlashtiradi.
-- **Server vaqti:** davomat vaqti qurilma soatidan emas, server soatidan olinadi va kompaniya vaqt zonasida yoziladi (standart: Toshkent). Planshet soatini o'zgartirib kechikishni yashirib bo'lmaydi.
-- **Qattiq CSP:** sayt faqat o'z skriptlarini yuklaydi. Clickjacking himoyasi, HSTS va `nosniff` yoqilgan.
-
-**Serverda (Render):**
-- `/api/ai` va `/api/telegram` POST so'rovlari quyidagilarni talab qiladi:
-  - sahifa ochilganda beriladigan imzolangan **HttpOnly, SameSite=Strict** cookie (`SESSION_SECRET` bilan imzolanadi; Render uni avtomatik yaratadi);
-  - maxsus `X-Workroom` sarlavhasi.
-  
-  Shuning uchun boshqa sayt bu so'rovlarni brauzer orqali yubora olmaydi.
-- **AI cheklovlari:** bitta IP'dan 10 daqiqada 20 ta so'rov, butun sayt bo'yicha kuniga `AI_DAILY_LIMIT` ta (standart 500).
-- **Kalitlar:** Gemini va Telegram kalitlari faqat serverda turadi. Telegram chat manzili imzolangan token ko'rinishida saqlanadi.
-
-**Sizning vazifangiz:**
-- Google'da Gemini uchun byudjet chegarasini qo'ying.
-- Xodimlardan yuz ma'lumoti uchun **yozma rozilik** oling (shaxsga doir ma'lumotlar to'g'risidagi qonun).
-- Zaxira faylini muntazam yuklab oling va xavfsiz joyda saqlang: unda maoshlar va yuz shablonlari bor.
-
-**Qolgan cheklovlar (ochiq aytamiz):**
-- Ma'lumotlar qurilmada shifrlanmagan. PIN ilova interfeysini yopadi, lekin qurilmaga to'liq kirish huquqi bo'lgan mutaxassis brauzer xotirasini o'qiy oladi.
-- Tiriklik tekshiruvi oddiy suratni to'xtatadi, lekin oldindan yozib olingan videoni yoki maxsus niqobni to'liq to'xtata olmaydi.
-- `/api/ai` ga juda ko'p turli IP'lardan uyushtirilgan hujumda kunlik limit tugashi mumkin. Bunda AI lokal rejimga o'tadi, xarajat esa limitdan oshmaydi.
-
-## Hozircha yo'q (keyingi bosqich)
-- Bir nechta qurilmada bir vaqtda ishlaydigan umumiy baza va xodimlar uchun alohida login. Buning uchun backend kerak (masalan, Supabase).
+## Cheklovlar (keyingi bosqich)
+- Face ID’da “tirik yuz” tekshiruvi yo‘q — telefondagi rasmni ko‘rsatib aldash mumkin. Kioskni rahbar ko‘radigan joyga qo‘ying; keyin ko‘z qisish/bosh burish tekshiruvini qo‘shamiz.
+- Video mesh ~6 kishigacha yaxshi; ko‘proq bo‘lsa LiveKit/Jitsi server kerak.
+- Jonli subtitr Safari/Firefox’da yo‘q — lekin yozuv baribir Gemini’ga boradi.
